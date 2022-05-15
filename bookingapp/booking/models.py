@@ -1,10 +1,12 @@
+import datetime
+
 from django.db import models
 
-# Create your models here.
 from django.db import models
 from ckeditor.fields import RichTextField
 from django.contrib.auth.models import AbstractUser
 
+# Create your models here.
 
 class UserType(models.Model):
     user_type_name = models.CharField(max_length=50)
@@ -25,11 +27,10 @@ class UserInfo(models.Model):
     #     abstract = True;
 
     name = models.CharField(max_length=50, null=False, unique=True)
-    phone = models.CharField(max_length=50, null=False, unique=True)
-    image = models.ImageField(upload_to='img_avata/%Y/%m', default=None)
     created_date = models.DateField(auto_now_add=True)
     upp_date = models.DateField(auto_now=True)
     contact = models.CharField(max_length=10)
+    image = models.ImageField(upload_to='img_avatar/%Y/%m', default=None)
     active = models.BooleanField(default=True)  # xóa nhưng vẫn còn dữ liệu
     routes = models.ManyToManyField('Routes', related_name='routes_user',blank=True)
     ordering = ["name"]  # sắp sếp
@@ -40,7 +41,7 @@ class UserInfo(models.Model):
 
 class Comment(models.Model):
     content = RichTextField()
-    user = models.ForeignKey(User, on_delete=models.CASCADE)  # on_delete: Xóa custommer nhưng vẫn giữ lại đc comment
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     created_date = models.DateField(auto_now_add=True)
     upded_date = models.DateField(auto_now=True)
 

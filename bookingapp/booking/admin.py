@@ -29,27 +29,19 @@ class BookingappAdminSite(admin.AdminSite):
 admin_site = BookingappAdminSite('myapp')
 
 
-class UserInfoForm(forms.ModelForm):
-    content = forms.CharField(widget=CKEditorUploadingWidget)
-
-    class Meta:
-        model = UserInfo
-        fields = '__all__'
-
-
 class UserInfoAdmin(admin.ModelAdmin):
     search_fields = ['id', 'name']
     list_filter = ['name', 'created_date']
-    list_display = ['id', 'name', 'phone', 'created_date']
-    readonly_fields = ['image_view']
-    form = UserInfoForm
+    list_display = ['id', 'name', 'created_date']
+    # readonly_fields = ['image_view']
 
-    def image_view(self, customer):
-        if customer:
-            return mark_safe(
-                '<img src="/static/{url}" width="120" />' \
-                    .format(url=customer.image.name)
-            )
+    # def image_view(self, customer):
+    #     if customer:
+    #         return mark_safe(
+    #             '<img src="/static/{url}" width="120" />' \
+    #                 .format(url=customer.image.name)
+    #         )
+
 
 
 class TrainInLine(admin.StackedInline):
@@ -99,10 +91,23 @@ class BillAdmin(admin.ModelAdmin):
     list_display = ['id', 'total', 'created_date']
 
 
+class CommentForm(forms.BaseForm):
+    content = forms.CharField(widget=CKEditorUploadingWidget)
+
+    class Meta:
+        model = Comment
+        fields = '__all__'
+
+
+
 class CommentAdmin(admin.ModelAdmin):
+    forms = CommentForm
+
     search_fields = ['content', 'created_date', 'upded_date']
     list_filter = ['content', 'created_date', 'upded_date']
     list_display = ['content', 'created_date', 'upded_date']
+
+
 
 # # Register your models here.i
 # admin.site.register(Group)
