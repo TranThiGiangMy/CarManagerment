@@ -1,0 +1,12 @@
+{% extends 'admin/base_site.html' %}
+{% block content %}
+
+<h1>SỐ TUYẾN XE: {{ count }}</h1>
+
+<ul>
+    {% for s in stats %}
+    <li>Lúc {{s.starting_date}} có {{s.train_count}} chuyến </li>
+    {% endfor %}
+</ul>
+
+{% endblock %}

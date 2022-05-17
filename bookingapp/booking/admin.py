@@ -1,16 +1,16 @@
 from django.contrib import admin
-from django.contrib.auth.models import Permission
+from django.contrib.auth.models import Permission, Group
 from django.db.models import Count
 from django.template.response import TemplateResponse
 from django.urls import path
 from django.utils.html import mark_safe
-from .models import User, UserType, UserInfo, Train, Routes, Tickets, Booking, Payment, Bill , Tag, Comment
+from .models import User, UserType, Train, Routes, Tickets, Booking, Payment, Bill , Tag, Comment
 from django import forms
 from ckeditor_uploader.widgets import CKEditorUploadingWidget
 
 
 class BookingappAdminSite(admin.AdminSite):
-    site_header = "booking app"
+    site_header = "HỆ THỐNG QUẢN LÝ ĐẶT VÉ XE KHÁCH"
 
     def get_urls(self):
         return [
@@ -18,10 +18,10 @@ class BookingappAdminSite(admin.AdminSite):
                ] + super().get_urls()
 
     def train_stats(self, request):
-        c = Train.objects.count()
-        stats = Train.objects.annotate(train_count=Count('route_trains')).values('id', 'train_count')
+        count = Train.objects.count()
+        stats = Train.objects.annotate(train_count=Count('route_train')).values('id', 'starting_date', 'train_count')
         return TemplateResponse(request, 'admin/train_stats.html', {
-            'c': c,
+            'count': count,
             'stats': stats
         })
 
@@ -29,18 +29,18 @@ class BookingappAdminSite(admin.AdminSite):
 admin_site = BookingappAdminSite('myapp')
 
 
-class UserInfoAdmin(admin.ModelAdmin):
+class UserAdmin(admin.ModelAdmin):
     search_fields = ['id', 'name']
-    list_filter = ['name', 'created_date']
-    list_display = ['id', 'name', 'created_date']
-    # readonly_fields = ['image_view']
+    list_filter = ['name']
+    list_display = ['id', 'name', 'user_type']
+    readonly_fields = ['image_view']
 
-    # def image_view(self, customer):
-    #     if customer:
-    #         return mark_safe(
-    #             '<img src="/static/{url}" width="120" />' \
-    #                 .format(url=customer.image.name)
-    #         )
+    def image_view(self, User):
+        if User:
+            return mark_safe(
+                '<img src="/static/{url}" width="120" />'
+                    .format(url=User.image.name)
+            )
 
 
 
@@ -69,8 +69,8 @@ class TrainAdmin(admin.ModelAdmin):
 
 class TicketsAdmin(admin.ModelAdmin):
     search_fields = ['id', 'price']
-    list_filter = ['price', 'created_date', 'upp_date']
-    list_display = ['id', 'price', 'created_date', 'upp_date']
+    list_filter = ['price', 'created_date', 'up_date']
+    list_display = ['id', 'price', 'created_date', 'up_date']
 
 
 class BookingAdmin(admin.ModelAdmin):
@@ -103,23 +103,22 @@ class CommentForm(forms.BaseForm):
 class CommentAdmin(admin.ModelAdmin):
     forms = CommentForm
 
-    search_fields = ['content', 'created_date', 'upded_date']
-    list_filter = ['content', 'created_date', 'upded_date']
-    list_display = ['content', 'created_date', 'upded_date']
+    search_fields = ['content', 'created_date', 'up_date']
+    list_filter = ['content', 'created_date', 'up_date']
+    list_display = ['content', 'created_date', 'up_date']
 
 
 
 # # Register your models here.i
-# admin.site.register(Group)
-admin.site.register(Permission)
-admin.site.register(User)
-admin.site.register(UserType)
-admin.site.register(UserInfo, UserInfoAdmin)
-admin.site.register(Train, TrainAdmin)
-admin.site.register(Routes, RoutesAdmin)
-admin.site.register(Tickets, TicketsAdmin)
-admin.site.register(Booking, BookingAdmin)
-admin.site.register(Payment, PaymentAdmin)
-admin.site.register(Bill, BillAdmin)
-admin.site.register(Comment, CommentAdmin)
-admin.site.register(Tag)
+admin_site.register(Group)
+admin_site.register(Permission)
+admin_site.register(User, UserAdmin)
+admin_site.register(UserType)
+admin_site.register(Train, TrainAdmin)
+admin_site.register(Routes, RoutesAdmin)
+admin_site.register(Tickets, TicketsAdmin)
+admin_site.register(Booking, BookingAdmin)
+admin_site.register(Payment, PaymentAdmin)
+admin_site.register(Bill, BillAdmin)
+admin_site.register(Comment, CommentAdmin)
+admin_site.register(Tag)
