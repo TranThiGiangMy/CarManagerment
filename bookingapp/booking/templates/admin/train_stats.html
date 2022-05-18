@@ -1,12 +1,18 @@
 {% extends 'admin/base_site.html' %}
 {% block content %}
 
-<h1>SỐ TUYẾN XE: {{ count }}</h1>
+<h1>THỐNG KÊ BÁO CÁO MẬT ĐỘ CHUYẾN XE THEO TUYẾN:</h1>
 
-<ul>
-    {% for s in stats %}
-    <li>Lúc {{s.starting_date}} có {{s.train_count}} chuyến </li>
-    {% endfor %}
-</ul>
+<form id="filterForm">
+    <label for="year">Chọn năm muốn thống kê:</label>
+
+    <input name="year" id="year"></input>
+    <ul>
+        {% for s in stats %}
+            <li>Lúc {{s.starting_date}} có {{s.train_count}} chuyến </li>
+        {% endfor %}
+    </ul>
+</form>
+
 
 {% endblock %}

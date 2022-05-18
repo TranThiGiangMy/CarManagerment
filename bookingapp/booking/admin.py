@@ -4,7 +4,7 @@ from django.db.models import Count
 from django.template.response import TemplateResponse
 from django.urls import path
 from django.utils.html import mark_safe
-from .models import User, UserType, Train, Routes, Tickets, Booking, Payment, Bill , Tag, Comment
+from .models import User, UserType, Train, Routes, Booking, Tag, Comment, TicKet
 from django import forms
 from ckeditor_uploader.widgets import CKEditorUploadingWidget
 
@@ -18,6 +18,7 @@ class BookingappAdminSite(admin.AdminSite):
                ] + super().get_urls()
 
     def train_stats(self, request):
+
         count = Train.objects.count()
         stats = Train.objects.annotate(train_count=Count('route_train')).values('id', 'starting_date', 'train_count')
         return TemplateResponse(request, 'admin/train_stats.html', {
@@ -69,26 +70,15 @@ class TrainAdmin(admin.ModelAdmin):
 
 class TicketsAdmin(admin.ModelAdmin):
     search_fields = ['id', 'price']
-    list_filter = ['price', 'created_date', 'up_date']
-    list_display = ['id', 'price', 'created_date', 'up_date']
+    list_filter = ['price', 'point']
+    list_display = ['id', 'price', 'point']
 
 
 class BookingAdmin(admin.ModelAdmin):
-    search_fields = ['ticket__price', 'number', 'train__date', 'routes_point']  # tìm kiếm
-    list_filter = ['id', 'number', ]
-    list_display = ['id', 'number', 'price', 'point', 'date']  # hiển thị các cột
+    search_fields = ['ticket__price', 'number', 'train__date', 'routes_point', 'pay']  # tìm kiếm
+    list_filter = ['date', 'pay', 'number']
+    list_display = ['id', 'number', 'ticket', 'pay']  # hiển thị các cột
 
-
-class PaymentAdmin(admin.ModelAdmin):
-    search_fields = ['id']
-    list_filter = ['cash', 'banking']
-    list_display = ['id', 'cash', 'banking']
-
-
-class BillAdmin(admin.ModelAdmin):
-    search_fields = ['id', 'total', 'created_date']
-    list_filter = ['total']
-    list_display = ['id', 'total', 'created_date']
 
 
 class CommentForm(forms.BaseForm):
@@ -103,9 +93,9 @@ class CommentForm(forms.BaseForm):
 class CommentAdmin(admin.ModelAdmin):
     forms = CommentForm
 
-    search_fields = ['content', 'created_date', 'up_date']
-    list_filter = ['content', 'created_date', 'up_date']
-    list_display = ['content', 'created_date', 'up_date']
+    search_fields = ['name', 'content', 'created_date']
+    list_filter = ['name', 'content', 'created_date', ]
+    list_display = ['name', 'content', 'created_date']
 
 
 
@@ -116,9 +106,7 @@ admin_site.register(User, UserAdmin)
 admin_site.register(UserType)
 admin_site.register(Train, TrainAdmin)
 admin_site.register(Routes, RoutesAdmin)
-admin_site.register(Tickets, TicketsAdmin)
+admin_site.register(TicKet, TicketsAdmin)
 admin_site.register(Booking, BookingAdmin)
-admin_site.register(Payment, PaymentAdmin)
-admin_site.register(Bill, BillAdmin)
 admin_site.register(Comment, CommentAdmin)
 admin_site.register(Tag)
