@@ -47,7 +47,7 @@ class UserAdmin(admin.ModelAdmin):
 
 class TrainInLine(admin.StackedInline):
     model = Train
-    fk_name = 'route_train'
+    fk_name = 'router'
 
 
 class TrainTagInLine(admin.StackedInline):
@@ -78,7 +78,11 @@ class BookingAdmin(admin.ModelAdmin):
     search_fields = ['ticket__price', 'number', 'train__date', 'routes_point', 'pay']  # tìm kiếm
     list_filter = ['date', 'pay', 'number']
     list_display = ['id', 'number', 'ticket', 'pay']  # hiển thị các cột
+    readonly_fields = ['total']
 
+    def total(self, Booking):
+        if Booking:
+            return Booking.ticket.price * Booking.number
 
 
 class CommentForm(forms.BaseForm):

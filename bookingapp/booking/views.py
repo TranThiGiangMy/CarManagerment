@@ -1,36 +1,99 @@
+import generics as generics
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import Group
 from django.shortcuts import render, redirect
-from rest_framework import viewsets, permissions, status
+from drf_yasg.utils import swagger_auto_schema
+from rest_framework import viewsets, permissions, status, generics
 # from .forms import  CreateUserForm
 # from bookingapp.booking.decorators import unauthenticated_user
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.parsers import MultiPartParser
+from .paginator import BasePagination
+from .models import Routes, Train, User, TicKet, Comment, Booking
+from .serializers import (
+	RoutesSerializer, TrainSerializer,
+	UserSerializer, TicketSerializer,
+	CommentSerializer, BookingSerializer,
+	TrainDetailSerializer
+)
 
-from .models import Routes, Train, User, TicKet
-from .serializers import RoutesSerializer, TrainSerializer, UserSerializer, TicketSerializer
+
+class UserViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.ListAPIView):
+	queryset = User.objects.filter(is_active=True)
+	serializer_class = UserSerializer
+	parser_classes = [MultiPartParser]
+	permission_classes = [permissions.IsAuthenticated]
+
+
+
+	@action(methods=['get'], detail=True, url_path="active-user", url_name="active-user")
+	def active_user(self, request):
+		return Response(self.serializer_class(request.user, context={'request': request}).data,
+						status=status.HTTP_200_OK)
 
 
 
 
-class RoutesViewSet(viewsets.ModelViewSet):
+class RoutesViewSet(viewsets.ViewSet, generics.ListAPIView, generics.GenericAPIView):
 	queryset = Routes.objects.filter(active=True)
 	serializer_class = RoutesSerializer
-	# permission_classes = [permissions.IsAuthenticated]
+	pagination_class = BasePagination
 
 
-	def get_permissions(self):
-		if self.action == 'list':
-			return [permissions.AllowAny()]
+	# def get_permissions(self):
+	# 	if self.action == 'list':
+	# 		return [permissions.AllowAny()]
+	#
+	# 	return [permissions.IsAuthenticated()]
+	#
+	def get_queryset(self):
+		router =  Routes.objects.filter(active=True)
 
-		return [permissions.IsAuthenticated()]
+		kw = self.request.query_params.get('kw')
+		if kw is not None:
+			router = router.filter(starting_point__icontains=kw)
+		return router
 
 
-class TrainViewSet(viewsets.ModelViewSet):
+	@action(methods=['get'], detail=True, url_path='trains')
+	def get_trains(self, request, pk):
+		trains = Routes.objects(pk=pk).trains.filter(active=True)
+
+		return Response(TrainSerializer(trains, many=True).data,status=status.HTTP_200_OK)
+
+
+class TrainViewSet(viewsets.ViewSet, generics.RetrieveAPIView):
 	queryset = Train.objects.filter(active=True)
-	serializer_class = TrainSerializer
+	serializer_class = TrainDetailSerializer
+
+	#
+	# def get_permissions(self):
+	# 	if self.action == 'add_comment':
+	# 		return [permissions.IsAuthenticated()]
+	#
+	# 	return [permissions.AllowAny()]
+
+
+	@swagger_auto_schema(
+		operation_description='This API is used to hidden the train',
+		responses={
+			status.HTTP_200_OK: TrainSerializer()
+		}
+	)
+
+
+	@action(methods=['post'], detail=True, url_path='add-comment')
+	def add_comment(self, request, pk):
+		content = request.data.get('content')
+		if content:
+			c = Comment.objects.create(content=content, train=self.get_object(),
+						user= request.user)
+			return Response(CommentSerializer(c).data, status=status.HTTP_201_CREATED)
+		return Response(status=status.HTTP_400_BAD_REQUEST )
+
 
 	@action(methods=['post'], detail=True, url_path='hide-train', url_name='hide-train')
 	def hide_train(self, request, pk):
@@ -43,15 +106,48 @@ class TrainViewSet(viewsets.ModelViewSet):
 
 		return Response(data=TrainSerializer(t).data, status=status.HTTP_200_OK)
 
-#
-# class UserViewSet(viewsets.ModelViewSet):
-# 	queryset = User.objects.filter(active=True)
-class TicketViewSet(viewsets.ModelViewSet):
+
+
+class TicketViewSet(viewsets.ViewSet, generics.ListAPIView):
 	queryset = TicKet.objects.filter(active=True)
 	serializer_class = TicketSerializer
 
 
+	def get_permissions(self):
+		if self.action == 'list':
+			return [permissions.AllowAny()]
 
+		return [permissions.IsAuthenticated()]
+
+
+class CommentViewSet(viewsets.ViewSet, generics.DestroyAPIView, generics.CreateAPIView):
+	queryset = Comment.objects.filter(active=True)
+	serializer_class = CommentSerializer
+	permission_classes = [permissions.IsAuthenticated]
+
+	def destroy(self, request, *args, **kwargs):
+		if request.user == self.get_object().user:
+			return super().destroy(request, *args, **kwargs)
+
+		return Response(status=status.HTTP_403_FORBIDDEN)
+
+
+	def partial_update(self, request, *args, **kwargs):
+		if request.user == self.get_object().user:
+			return super().partial_update(request, *args, **kwargs)
+
+		return Response(status=status.HTTP_403_FORBIDDEN)
+
+
+class BookingViewSet(viewsets.ViewSet, generics.ListAPIView, generics.RetrieveAPIView):
+	queryset = Booking.objects.filter(active=True)
+	serializer_class = BookingSerializer
+
+	def get_permissions(self):
+		if self.request.method == 'GET':
+			return [permissions.AllowAny()]
+
+		return [permissions.IsAuthenticated()]
 
 
 #

@@ -6,9 +6,12 @@ from rest_framework import routers
 from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
-router.register('routes', views.RoutesViewSet)
-router.register('train', views.TrainViewSet)
-router.register('ticket', views.TicketViewSet)
+router.register('routes', views.RoutesViewSet, 'route')
+router.register('trains', views.TrainViewSet, 'train')
+router.register('tickets', views.TicketViewSet, 'ticket')
+router.register('users', views.UserViewSet, 'user')
+router.register('comments', views.CommentViewSet, 'comment')
+router.register('bookings', views.BookingViewSet, 'booking')
 
 
 urlpatterns = [
