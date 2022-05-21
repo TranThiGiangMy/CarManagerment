@@ -4,7 +4,7 @@ from django.db.models import Count
 from django.template.response import TemplateResponse
 from django.urls import path
 from django.utils.html import mark_safe
-from .models import User, UserType, Train, Routes, Booking, Tag, Comment, TicKet
+from .models import User, UserType, Train, Routes, Booking, Tag, Comment, Ticket, Category
 from django import forms
 from ckeditor_uploader.widgets import CKEditorUploadingWidget
 
@@ -28,6 +28,12 @@ class BookingappAdminSite(admin.AdminSite):
 
 
 admin_site = BookingappAdminSite('myapp')
+
+
+class CategoryAdmin(admin.ModelAdmin):
+    search_fields = ['id', 'name']
+    list_filter = ['name']
+    list_display = ['id', 'name']
 
 
 class UserAdmin(admin.ModelAdmin):
@@ -75,9 +81,9 @@ class TicketsAdmin(admin.ModelAdmin):
 
 
 class BookingAdmin(admin.ModelAdmin):
-    search_fields = ['ticket__price', 'number', 'train__date', 'routes_point', 'pay']  # tìm kiếm
-    list_filter = ['date', 'pay', 'number']
-    list_display = ['id', 'number', 'ticket', 'pay']  # hiển thị các cột
+    search_fields = ['ticket__price', 'number', 'train__date', 'routes_point']
+    list_filter = ['date', 'number', 'pay']
+    list_display = ['id', 'number', 'ticket', 'pay']
     readonly_fields = ['total']
 
     def total(self, Booking):
@@ -93,24 +99,24 @@ class CommentForm(forms.BaseForm):
         fields = '__all__'
 
 
-
 class CommentAdmin(admin.ModelAdmin):
     forms = CommentForm
 
-    search_fields = ['name', 'content', 'created_date']
-    list_filter = ['name', 'content', 'created_date', ]
-    list_display = ['name', 'content', 'created_date']
+    search_fields = ['name', 'content', 'created_date', 'train']
+    list_filter = ['name', 'content', 'created_date', 'train']
+    list_display = ['name', 'content', 'created_date', 'train']
 
 
 
 # # Register your models here.i
 admin_site.register(Group)
 admin_site.register(Permission)
+admin_site.register(Category, CategoryAdmin)
 admin_site.register(User, UserAdmin)
 admin_site.register(UserType)
 admin_site.register(Train, TrainAdmin)
 admin_site.register(Routes, RoutesAdmin)
-admin_site.register(TicKet, TicketsAdmin)
+admin_site.register(Ticket, TicketsAdmin)
 admin_site.register(Booking, BookingAdmin)
 admin_site.register(Comment, CommentAdmin)
 admin_site.register(Tag)

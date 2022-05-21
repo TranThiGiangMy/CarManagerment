@@ -11,30 +11,57 @@ from rest_framework import viewsets, permissions, status, generics
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser
+from rest_framework.views import APIView
+from django.conf import settings
 from .paginator import BasePagination
-from .models import Routes, Train, User, TicKet, Comment, Booking
+from .models import Routes, Train, User, Ticket, Comment, Booking, Action, Rating, Category
 from .serializers import (
 	RoutesSerializer, TrainSerializer,
 	UserSerializer, TicketSerializer,
 	CommentSerializer, BookingSerializer,
-	TrainDetailSerializer
+	TrainDetailSerializer, ActionSerializer,
+	RatingSerializer, CategorySerializer
 )
+
+
+class CategoryViewset(viewsets.ViewSet, generics.ListAPIView):
+    queryset = Category.objects.filter(active=True)
+    serializer_class = CategorySerializer
+
+    def get_queryset(self):
+        q = self.queryset
+
+        kw = self.request.query_params.get('kw')
+        if kw:
+            q = q.filter(name__icontains=kw)
+
+        return q
 
 
 class UserViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.ListAPIView):
 	queryset = User.objects.filter(is_active=True)
 	serializer_class = UserSerializer
 	parser_classes = [MultiPartParser]
-	permission_classes = [permissions.IsAuthenticated]
+
+
+	def get_permissions(self):
+		if self.action == 'get_active_user':
+			return [permissions.IsAuthenticated()]
+
+		return [permissions.AllowAny()]
+
 
 
 
 	@action(methods=['get'], detail=True, url_path="active-user", url_name="active-user")
-	def active_user(self, request):
+	def get_active_user(self, request):
 		return Response(self.serializer_class(request.user, context={'request': request}).data,
 						status=status.HTTP_200_OK)
 
 
+class AuthInfo(APIView):
+	def get(self, request):
+		return Response(settings.OAUTH2_INFO, status=status.HTTP_200_OK)
 
 
 class RoutesViewSet(viewsets.ViewSet, generics.ListAPIView, generics.GenericAPIView):
@@ -49,6 +76,8 @@ class RoutesViewSet(viewsets.ViewSet, generics.ListAPIView, generics.GenericAPIV
 	#
 	# 	return [permissions.IsAuthenticated()]
 	#
+
+
 	def get_queryset(self):
 		router =  Routes.objects.filter(active=True)
 
@@ -65,16 +94,17 @@ class RoutesViewSet(viewsets.ViewSet, generics.ListAPIView, generics.GenericAPIV
 		return Response(TrainSerializer(trains, many=True).data,status=status.HTTP_200_OK)
 
 
+
 class TrainViewSet(viewsets.ViewSet, generics.RetrieveAPIView):
 	queryset = Train.objects.filter(active=True)
 	serializer_class = TrainDetailSerializer
 
-	#
-	# def get_permissions(self):
-	# 	if self.action == 'add_comment':
-	# 		return [permissions.IsAuthenticated()]
-	#
-	# 	return [permissions.AllowAny()]
+
+	def get_permissions(self):
+		if self.action in ['add_comment', 'like', 'rate']:
+			return [permissions.IsAuthenticated()]
+
+		return [permissions.AllowAny()]
 
 
 	@swagger_auto_schema(
@@ -92,7 +122,17 @@ class TrainViewSet(viewsets.ViewSet, generics.RetrieveAPIView):
 			c = Comment.objects.create(content=content, train=self.get_object(),
 						user= request.user)
 			return Response(CommentSerializer(c).data, status=status.HTTP_201_CREATED)
+
 		return Response(status=status.HTTP_400_BAD_REQUEST )
+
+
+	@action(methods=['get'], url_path='comments', detail=True)
+	def get_comments(self, request, pk):
+		train = self.get_object()
+		comments = train.comments.select_related('user').filter(active=True)
+
+		return Response(CommentSerializer(comments, many=True).data,
+						status=status.HTTP_200_OK)
 
 
 	@action(methods=['post'], detail=True, url_path='hide-train', url_name='hide-train')
@@ -108,8 +148,33 @@ class TrainViewSet(viewsets.ViewSet, generics.RetrieveAPIView):
 
 
 
+	@action(methods=['post'], detail=True, url_path='like')
+	def like(self, request, pk):
+		try:
+			action_type = int(request.data['type'])
+		except ValueError | IndexError:
+			return Response(status=status.HTTP_400_BAD_REQUEST)
+		else:
+			action = Action.objects.create(type=action_type, user = request.user, train = self.get_object())
+
+			return Response(ActionSerializer(action).data, status=status.HTTP_200_OK)
+
+
+	@action(methods=['post'], detail=True, url_path='rating')
+	def rate(self, request):
+		try:
+			rating = int(request.data['rating'])
+		except IndexError | ValueError:
+			return Response(status=status.HTTP_400_BAD_REQUEST)
+		else:
+			r = Rating.objects.create(rate=rating, user= request.user, train=self.get_object())
+
+			return Response(RatingSerializer(r).data, status=status.HTTP_200_OK)
+
+
+
 class TicketViewSet(viewsets.ViewSet, generics.ListAPIView):
-	queryset = TicKet.objects.filter(active=True)
+	queryset = Ticket.objects.filter(active=True)
 	serializer_class = TicketSerializer
 
 
@@ -120,10 +185,10 @@ class TicketViewSet(viewsets.ViewSet, generics.ListAPIView):
 		return [permissions.IsAuthenticated()]
 
 
-class CommentViewSet(viewsets.ViewSet, generics.DestroyAPIView, generics.CreateAPIView):
+class CommentViewSet(viewsets.ViewSet, generics.DestroyAPIView, generics.CreateAPIView, generics.ListAPIView):
 	queryset = Comment.objects.filter(active=True)
 	serializer_class = CommentSerializer
-	permission_classes = [permissions.IsAuthenticated]
+	# permission_classes = [permissions.IsAuthenticated]
 
 	def destroy(self, request, *args, **kwargs):
 		if request.user == self.get_object().user:

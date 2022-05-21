@@ -55,6 +55,12 @@ REST_FRAMEWORK = {
     )
 }
 
+OAUTH2_INFO = {
+    "client_id" : "eRr95rUYqnv81nu1sezSgNxzKtusid0xRuDW3mTG",
+    "client_secret" : "YJQWAsG1oke6FWAvLnKCBYXM9FNVXq1T6RgO7C3FcfwRUpciSTAorFqPk9xkPsG6rKV9sPFXYYLsy82ystBmeuxPQrjC3U80b3RJ0IXdGqXzOSKpJ34sYYyHGALdoFEI"
+}
+
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',

@@ -12,10 +12,13 @@ router.register('tickets', views.TicketViewSet, 'ticket')
 router.register('users', views.UserViewSet, 'user')
 router.register('comments', views.CommentViewSet, 'comment')
 router.register('bookings', views.BookingViewSet, 'booking')
+router.register('categories', views.CategoryViewset, 'category')
 
 
 urlpatterns = [
     path('', include(router.urls)),
     # path('', views.index, name="index"),
     # path('test/', views.TestView.as_view()),
-    path('admin/', admin_site.urls)]
+    path('admin/', admin_site.urls),
+    path('oauth2-info/', views.AuthInfo.as_view())
+]

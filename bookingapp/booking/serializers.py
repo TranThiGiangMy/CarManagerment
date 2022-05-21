@@ -1,8 +1,13 @@
 from rest_framework.serializers import ModelSerializer, SerializerMethodField
 from rest_framework.templatetags.rest_framework import data
 
-from .models import Routes, Tag, Train, TicKet, User, Comment, Booking
+from .models import Routes, Tag, Train, Ticket, User, Comment, Booking, Action, Rating, Category
 
+
+class CategorySerializer(ModelSerializer):
+    class Meta:
+        model = Category
+        fields = "__all__"
 
 
 class RoutesSerializer(ModelSerializer):
@@ -16,22 +21,7 @@ class RoutesSerializer(ModelSerializer):
 class TagSerializer(ModelSerializer):
     class Meta:
         model = Tag
-        fields = ['d', 'name']
-
-
-
-class TrainSerializer(ModelSerializer):
-    tags = TagSerializer(many=True)
-
-    class Meta:
-        model = Train
-        fields = ['id', 'starting_date', 'ending_date','router', 'tags', 'note', 'empty_seat']
-
-
-class TrainDetailSerializer(TrainSerializer):
-    class Meta:
-        model = TrainSerializer.Meta.model
-        fields = TrainSerializer.Meta.fields + ['content']
+        fields = ['id', 'name']
 
 
         
@@ -65,21 +55,58 @@ class UserSerializer(ModelSerializer):
             return user
 
 
+class TrainSerializer(ModelSerializer):
+    tags = TagSerializer(many=True)
+
+    class Meta:
+        model = Train
+        fields = ['id', 'starting_date', 'ending_date','router', 'tags', 'note', 'empty_seat', 'user_train']
+
+
+class TrainDetailSerializer(TrainSerializer):
+    class Meta:
+        model = TrainSerializer.Meta.model
+        fields = TrainSerializer.Meta.fields + ['content']
 
 
 class TicketSerializer(ModelSerializer):
     class Meta:
-        model = TicKet
+        model = Ticket
         fields = ['id', 'created_date', 'price', 'active']
 
 
 class CommentSerializer(ModelSerializer):
+
     class Meta:
         model = Comment
-        fields = ['id', 'name', 'content', 'created_date', 'up_date']
+        fields = ['id', 'name', 'content', 'created_date', 'up_date', 'train', 'user']
 
 
 class BookingSerializer(ModelSerializer):
+
     class Meta:
         model = Booking
-        fields = ['id', 'number', 'created_date_book', 'pay']
+        fields = ['id','ticket', 'number', 'created_date_book', 'pay', 'user_book', 'active']
+
+
+class ActionSerializer(ModelSerializer):
+    class Meta:
+        model = Action
+        fields = ['id', 'type', 'created_date']
+
+
+class RatingSerializer(ModelSerializer):
+    class Meta:
+        model = Rating
+        fields = ['id', 'rate', 'created_date']
+
+
+#
+# class AuthBusesDetailSerializer(TrainDetailSerializer):
+#     like = SerializerMethodField()
+#     rating = SerializerMethodField()
+#
+#
+#     class Meta:
+#         model = Train
+#         fields = TrainDetailSerializer.Meta.fields + ['like', 'rating']
